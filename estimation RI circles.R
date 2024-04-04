@@ -14,10 +14,11 @@ library(tidyverse)
 
 
 rm(list=ls())
-setwd("/Users/mihai/Desktop/Caltech/SupernormalStimuli/sns data/")
+setwd("/Users/mihai/Desktop/Caltech/SupernormalStimuli/Data and code final/circles")
 
 ################# prepare data ####################
 data = read_excel("data sns circles.xlsx",sheet = "RI estimation testing")
+
 ## rename and clean data
 data = data%>%rename(states = circle_number)%>%
   group_by(participant) %>%
@@ -34,9 +35,9 @@ count_action = data%>%dplyr::select(ID, states, engage, nengage)%>%
 count_action = count_action%>%arrange(ID, states)
 data = data%>%arrange(ID, trial)
 
-nsubj = length(unique(data$participant))
+nsubj = length(unique(data$participant)) # number of subjects
 
-engage = matrix(NA, nrow = nsubj, ncol = 6)
+engage = matrix(NA, nrow = nsubj, ncol = 6) # Here, 6 is the number of states (i.e. 6 circles)
 nengage = matrix(NA, nrow = nsubj, ncol = 6)
 for (i in 1:nsubj){
   engage[i,1] = count_action$sum_e[(i-1)*6+1]
@@ -77,7 +78,7 @@ multinom=function(x1,x2){
   return(sum(log(1:max(1,(x1+x2))))-sum(log(c(1:max(1,x1),1:max(1,x2)))))
 }
 
-# incentive
+# incentive reward vector for peak-shift effect
 r = c(0,-0.5,-1,1,0.5,0);
 # number of states
 N = length(r);
@@ -145,20 +146,52 @@ for (indii in 1:nsubj){
 }
 
 # check whether the initial value is at the boundary
-initval_LLR == beta[1] # 3, 5, 10 reaches the lower bound
+initval_LLR == beta[1] # 3, 5, 10 reaches the lower bound for RI circles
 initval_LLR == beta[length(beta)]
-initval_NH == kappa[1] 
+initval_NH == kappa[1] # 3 reaches the lower bound
 initval_NH == kappa[length(kappa)] 
 initval_MI == rho[1] # 3 reaches the lower bound
 initval_MI == rho[length(rho)]
 
+### DO NOT RUN THE BELOW SECTION RIGHT AWAY, check boundaries before (if TRUE for any subjects as given by above verification in lines 148-154)
+## Run this section ONLY IF lower or upper bound are met and need to be re-estimated. 
+# We first modify the parameter interval and then re-estimate for either MI, NH or LLR and replace re-estimated parameters in the initval_LLR, initval_NH or initval_MI variables.
 
-# just drop subjects who met the lower bound (don't run)
-# do grid search again for ID = 6, 12, 13 -> these subjects reach higher bound, so we need to increase interval of estimation (doesn't work) 
+# do grid search again for ID = 3, 5, 10 -> these subjects reach higher bound, so we need to increase interval of estimation (doesn't work)
+# If upon increasing. estimation interval, the bounds are still not met, then just drop subjects who met the lower bound (don't run)
+# LLR
+beta.refined = seq(50,100,0.1)
+loglike_LLR.refined = rep(NA, 3) 
+initval_LLR.refined = rep(NA, 3)
+subj.refined = c(3, 5, 10)
+
+for (indii in subj.refined){
+  multinomconst = 0
+  for (i in 1:N){
+    multinomconst = multinomconst + multinom(engage[indii,i],nengage[indii,i])
+  }
+  for (j in 1:length(beta.refined)){
+    obj_llr = function(prob){
+      return(-sum(r*prob)/N+cost_llr(prob, beta.refined[j]))
+    }
+    optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
+    loglike_LLR.refined[j]= multinomconst + sum(engage[indii,]*log(optimout_llr$par))+sum(nengage[indii,]*(log(1-optimout_llr$par)))
+  }
+  initval_LLR.refined[indii] = beta.refined[which.max(loglike_LLR.refined)]
+}
+
+# Check if parameters are outside interval. if yes, redo with larger interval. e.g. instead of beta.refined = seq(50,100,0.1), one can use beta.refined = seq(100,200,0.1)
+initval_LLR
+initval_LLR.refined
+
+# If the values fall within the interval, then replace them in initval_LLR
+initval_LLR[c(3, 5, 10)] = initval_LLR.refined[c(3, 5, 10)]
+
+# NH
 kappa.refined = seq(50,100,0.1)
-loglike_NH.refined = rep(NA, 3)
+loglike_NH.refined = rep(NA, 3) 
 initval_NH.refined = rep(NA, 3)
-subj.refined = c(6,12,13)
+subj.refined = c(3)
 
 for (indii in subj.refined){
   multinomconst = 0
@@ -176,8 +209,43 @@ for (indii in subj.refined){
   initval_NH.refined[indii] = kappa.refined[which.max(loglike_NH.refined)]
 }
 
-# drop subjects 3, 5, 6, 10, 12, 13
-exclude = c(3, 5,  10)
+# check again if outside interval. if yes, then needs to be re-done. instead of kappa.refined = seq(50,100,0.1), one can use kappa.refined = seq(100,200,0.1)
+initval_NH
+initval_NH.refined
+
+# If the values fall within the interval, then replace them in initval_NH
+initval_NH[c(3)] = initval_NH.refined[c(3)]
+
+# MI
+rho.refined = seq(50,100,0.1)
+loglike_MI.refined = rep(NA, 3) 
+initval_MI.refined = rep(NA, 3)
+subj.refined = c(3)
+
+for (indii in subj.refined){
+  multinomconst = 0
+  for (i in 1:N){
+    multinomconst = multinomconst + multinom(engage[indii,i],nengage[indii,i])
+  }
+  for (j in 1:length(rho.refined)){
+    obj_mi = function(prob){
+      return(-sum(r*prob)/N+cost_mi(prob, rho.refined[j]))
+    }
+    optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
+    loglike_MI.refined[j]= multinomconst + sum(engage[indii,]*log(optimout_mi$par))+sum(nengage[indii,]*(log(1-optimout_mi$par)))
+  }
+  initval_MI.refined[indii] = rho.refined[which.max(loglike_MI.refined)]
+}
+
+# check again if outside interval. if yes, then needs to be re-done. instead of kappa.refined = seq(50,100,0.1), one can use rho.refined = seq(100,200,0.1)
+initval_MI.refined
+# If the values fall within the interval, then replace them in initval_MI
+initval_MI[c(3)] = initval_MI.refined[c(3)]
+
+
+
+# After MLE estimation, if errors still occur, it means that parameters are not properly re-estimated. Then just drop subjects 3, 5, 10 (easier than re-estimation)
+exclude = c(3, 5, 10) #un-comment if you want to drop said subjects (in this case: 3, 5, 10)
 
 # get lower and upper bound
 lower_LLR = initval_LLR - 0.01
@@ -291,7 +359,7 @@ BIC = BIC%>%mutate(
 BIC <- BIC%>%dplyr::select(BICLLR, BICNH, BICMI, select_model.bic)
 colnames(BIC) <- c("LLR", "NH", "MI", "Selected model")
 table_aic <- xtable(AIC, digits = 4, caption = "AIC for different cost functions")
-results_path = "/Users/janine/Documents/Documents - Zhenlin’s MacBook Pro/Rational Inattention/SNS/Output"
+results_path = "/Users/mihai/Desktop/Caltech/SupernormalStimuli/Data and code final/circles/Output" ## Change path as desired
 html_output <- print(table_aic, type = "html", comment = FALSE, caption.placement = "top", printl.results = FALSE)
 footnote <- "<p> Notes on missing values: unable to find a global maximum for at least one of the cost models</p>"
 con <- file(file.path(results_path, "table_aic.html"), open = "wt")
@@ -324,10 +392,16 @@ for (indii in count_subj){
     prob_mi_subj[indii, ] = optimout_mi$par
 }
 
-# subj id for each best fit
-best_model_llr = c(2)
-best_model_nh = c(4,7,8,9,11,12,13,14)
-best_model_mi = c(1,6,15)
+# subj id for each best fit (check this in optimout and manually fill in, no need for aggregate choice probs)
+# best_model_llr = c(2)
+# best_model_nh = c(4,7,8,9,11,12,13,14)
+# best_model_mi = c(1,6,15)
+
+### In the end, we're interested in obtaining aggregate level choice probabilities for each of the states 1, 2, 3, 4, 5 or 6, namely:
+#prob_llr.agg = optimout_llr$par
+#prob_nh.agg = optimout_nh$par
+#prob_mi.agg = optimout_mi$par
+#These are obtained after estimating the below. 
 
 
 # aggregate level
@@ -335,130 +409,148 @@ best_model_mi = c(1,6,15)
 loglike_NH = rep(NA, length(kappa))
 loglike_LLR = rep(NA, length(beta))
 loglike_MI = rep(NA, length(rho))
+multinomconst = 0
+data.agg <- data%>%ungroup()%>%group_by(states)%>%summarise(sum_e = sum(engage), sum_n = sum(nengage), mean_e = mean(engage), mean_n = mean(nengage))
+engage = data.agg$sum_e
+nengage = data.agg$sum_n
+  
+for (i in 1:N){
+    multinomconst = multinomconst + multinom(engage,nengage)
+}
+
+for (j in 1:length(beta)){
+  obj_llr = function(prob){
+    return(-sum(r*prob)/N+cost_llr(prob, beta[j]))
+  }
+  optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
+  loglike_LLR[j]= multinomconst + sum(engage*log(optimout_llr$par))+sum(nengage*(log(1-optimout_llr$par)))
+}
+  
+for (j in 1:length(kappa)){
+  obj_nh = function(prob){
+    return(-sum(r*prob)/N+cost_nh(prob, kappa[j]))
+  }
+  obj_mi = function(prob){
+    return(-sum(r*prob)/N+cost_mi(prob, rho[j]))
+  }
+  optimout_nh=constrOptim(rep(1/20,N),obj_nh, grad = NULL, ui=conmat,ci=convec)
+  loglike_NH[j]= multinomconst + sum(engage*log(optimout_nh$par))+sum(nengage*(log(1-optimout_nh$par)))
+  optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
+  loglike_MI[j]= multinomconst + sum(engage*log(optimout_mi$par))+sum(nengage*(log(1-optimout_mi$par)))
+}
+
+initval_LLR.agg = beta[which.max(loglike_LLR)]
+initval_NH.agg = kappa[which.max(loglike_NH)]
+initval_MI.agg = rho[which.max(loglike_MI)]
+
+# estimation
+multinomconst = 0
+for (i in 1:N){
+  multinomconst = multinomconst + multinom(engage,nengage)
+}
+
+ll_llr = function(k){
+  probvec = prob_llr(k)
+  like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
+    return(-like)
+}
+
+ll_nh = function(k){
+  probvec = prob_nh(k)
+  like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
+    return(-like)
+}
+    
+ll_mi = function(k){
+  probvec = prob_mi(k)
+  like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
+    return(-like)
+}
+
+model_mi=mle(ll_mi,start=list(k=initval_MI.agg), method="L-BFGS-B",lower=initval_MI.agg - 0.1,upper=initval_MI.agg+0.1)
+par_mi.agg=coef(model_mi)
+llout_mi.agg=logLik(model_mi)[1]
+model_llr=mle(ll_llr,start=list(k=initval_LLR.agg), method="L-BFGS-B",lower=initval_LLR.agg - 0.01,upper=initval_LLR.agg + 0.01)
+model_nh=mle(ll_nh,start=list(k=initval_NH.agg), method="L-BFGS-B",lower=initval_NH.agg-0.1,upper=initval_NH.agg+0.1)
+par_llr.agg=coef(model_llr)
+par_nh.agg=coef(model_nh)
+llout_llr.agg=logLik(model_llr)[1]
+llout_nh.agg=logLik(model_nh)[1]
+# agg best fit: NH > LLR > MI
+ 
+# get agg-level choice probabilities
+for (indii in count_subj){
   multinomconst = 0
-  data.agg <- data%>%ungroup()%>%group_by(states)%>%summarise(sum_e = sum(engage), sum_n = sum(nengage), mean_e = mean(engage), mean_n = mean(nengage))
-  engage = data.agg$sum_e
-  nengage = data.agg$sum_n
+  
   for (i in 1:N){
     multinomconst = multinomconst + multinom(engage,nengage)
-  }
-  for (j in 1:length(beta)){
-    obj_llr = function(prob){
-      return(-sum(r*prob)/N+cost_llr(prob, beta[j]))
     }
-    optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
-    loglike_LLR[j]= multinomconst + sum(engage*log(optimout_llr$par))+sum(nengage*(log(1-optimout_llr$par)))
-  }
-  for (j in 1:length(kappa)){
-    obj_nh = function(prob){
-      return(-sum(r*prob)/N+cost_nh(prob, kappa[j]))
+  
+  obj_llr = function(prob){
+    return(-sum(r*prob)/N+cost_llr(prob, par_llr.agg))
     }
-    obj_mi = function(prob){
-      return(-sum(r*prob)/N+cost_mi(prob, rho[j]))
+  optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
+  
+  obj_nh = function(prob){
+    return(-sum(r*prob)/N+cost_nh(prob, par_nh.agg))
     }
-    optimout_nh=constrOptim(rep(1/20,N),obj_nh, grad = NULL, ui=conmat,ci=convec)
-    loglike_NH[j]= multinomconst + sum(engage*log(optimout_nh$par))+sum(nengage*(log(1-optimout_nh$par)))
-    optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
-    loglike_MI[j]= multinomconst + sum(engage*log(optimout_mi$par))+sum(nengage*(log(1-optimout_mi$par)))
-  }
-  initval_LLR.agg = beta[which.max(loglike_LLR)]
-  initval_NH.agg = kappa[which.max(loglike_NH)]
-  initval_MI.agg = rho[which.max(loglike_MI)]
-
-  # estimation
-    multinomconst = 0
-    for (i in 1:N){
-      multinomconst = multinomconst + multinom(engage,nengage)
+  
+  obj_mi = function(prob){
+    return(-sum(r*prob)/N+cost_mi(prob, par_mi.agg))
     }
-    ll_llr = function(k){
-      probvec = prob_llr(k)
-      like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
-      return(-like)
-    }
-    ll_nh = function(k){
-      probvec = prob_nh(k)
-      like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
-      return(-like)
-    }
-    ll_mi = function(k){
-      probvec = prob_mi(k)
-      like = multinomconst + sum(engage*log(probvec))+sum(nengage*(log(1-probvec)))
-      return(-like)
-    }
-    model_mi=mle(ll_mi,start=list(k=initval_MI.agg), method="L-BFGS-B",lower=initval_MI.agg - 0.1,upper=initval_MI.agg+0.1)
-    par_mi.agg=coef(model_mi)
-    llout_mi.agg=logLik(model_mi)[1]
-    model_llr=mle(ll_llr,start=list(k=initval_LLR.agg), method="L-BFGS-B",lower=initval_LLR.agg - 0.01,upper=initval_LLR.agg + 0.01)
-    model_nh=mle(ll_nh,start=list(k=initval_NH.agg), method="L-BFGS-B",lower=initval_NH.agg-0.1,upper=initval_NH.agg+0.1)
-    par_llr.agg=coef(model_llr)
-    par_nh.agg=coef(model_nh)
-    llout_llr.agg=logLik(model_llr)[1]
-    llout_nh.agg=logLik(model_nh)[1]
- # agg best fit: NH > LLR > MI
- 
-    # get agg-level choice probabilities
-    for (indii in count_subj){
-      multinomconst = 0
-      for (i in 1:N){
-        multinomconst = multinomconst + multinom(engage,nengage)
-      }
-      obj_llr = function(prob){
-        return(-sum(r*prob)/N+cost_llr(prob, par_llr.agg))
-      }
-      optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
-      obj_nh = function(prob){
-        return(-sum(r*prob)/N+cost_nh(prob, par_nh.agg))
-      }
-      obj_mi = function(prob){
-        return(-sum(r*prob)/N+cost_mi(prob, par_mi.agg))
-      }
-      optimout_nh=constrOptim(rep(1/20,N),obj_nh, grad = NULL, ui=conmat,ci=convec)
-      optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
-      prob_llr.agg = optimout_llr$par
-      prob_nh.agg = optimout_nh$par
-      prob_mi.agg = optimout_mi$par
-    } 
+  optimout_nh=constrOptim(rep(1/20,N),obj_nh, grad = NULL, ui=conmat,ci=convec)
+  optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
+  prob_llr.agg = optimout_llr$par
+  prob_nh.agg = optimout_nh$par
+  prob_mi.agg = optimout_mi$par
+} 
   
 
 
     
 # Create a data frame from vectors
-    df <- data.frame(
-      state = c(1, 2, 3, 4, 5, 6),
-      mean_e = data.agg$mean_e,
-      prob_llr_agg = prob_llr.agg,
-      prob_nh_agg = prob_nh.agg,
-      prob_mi_agg = prob_mi.agg
-    )
+df <- data.frame(
+  state = c(1, 2, 3, 4, 5, 6),
+  mean_e = data.agg$mean_e,
+  prob_llr_agg = prob_llr.agg,
+  prob_nh_agg = prob_nh.agg,
+  prob_mi_agg = prob_mi.agg
+)
     
-    ggplot(df, aes(x = state)) +
-      # Add bar plot for mean_e
-      geom_bar(aes(y = mean_e, fill = "Empirical"), stat = "identity") +
-      # Add lines and points for the other vectors
-      geom_line(aes(y = prob_llr_agg, color = "LLR"), size = 1) +
-      geom_point(aes(y = prob_llr_agg, color = "LLR"), size = 3) +
-      
-      geom_line(aes(y = prob_nh_agg, color = "NH"), size = 1) +
-      geom_point(aes(y = prob_nh_agg, color = "NH"), size = 3) +
-      
-      geom_line(aes(y = prob_mi_agg, color = "MI"), size = 1) +
-      geom_point(aes(y = prob_mi_agg, color = "MI"), size = 3) +
-      
-      # Label axes
-      labs(x = "State", y = "Choice Probability") +
-      scale_fill_manual(values = c("Empirical" = "grey"),
-                        name = "", 
-                        breaks = "Empirical") +
-      scale_color_manual(values = c("LLR" = "red", "NH" = "blue", "MI" = "green"),
-                         name = "") +
-      scale_x_continuous(breaks = df$state, labels = 1:6) +
-      # Theme adjustments
-      theme_minimal() +
-      theme(legend.position = "right",
-            axis.ticks = element_blank())
-    
+ggplot(df, aes(x = state)) +
+  # Add bar plot for mean_e
+  geom_bar(aes(y = mean_e, fill = "Empirical"), stat = "identity") +
+  # Add lines and points for the other vectors
+  geom_line(aes(y = prob_llr_agg, color = "LLR"), size = 1) +
+  geom_point(aes(y = prob_llr_agg, color = "LLR"), size = 3) +
+  geom_line(aes(y = prob_nh_agg, color = "NH"), size = 1) +
+  geom_point(aes(y = prob_nh_agg, color = "NH"), size = 3) +
+  geom_line(aes(y = prob_mi_agg, color = "MI"), size = 1) +
+  geom_point(aes(y = prob_mi_agg, color = "MI"), size = 3) +
+  # Label axes
+  labs(x = "State", y = "Choice Probability") +
+  scale_fill_manual(
+    values = c("Empirical" = "grey"),
+    name = "",
+    breaks = "Empirical"
+  ) +
+  scale_color_manual(
+    values = c(
+      "LLR" = "red",
+      "NH" = "blue",
+      "MI" = "green"
+    ),
+    name = ""
+  ) +
+  scale_x_continuous(breaks = df$state, labels = 1:6) +
+  # Theme adjustments
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    axis.ticks = element_blank()
+  )
 
-
+  
 
 save.image("output_circles.Rdata")
 
