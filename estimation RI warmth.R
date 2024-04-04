@@ -15,7 +15,7 @@ library(tidyverse)
 library(xtable)
 
 rm(list=ls())
-setwd("/Users/mihai/Desktop/Caltech/SupernormalStimuli/sns data/")
+setwd("/Users/mihai/Desktop/Caltech/SupernormalStimuli/Data and code final/WC") # location of directory with data
 
 ################# prepare data ####################
 data = read_excel("data sns w&c.xlsx",sheet = "R_testing_warmth") # change here with "R_test_warmth" , "R_train_competence" and "R_test_competence"
@@ -37,10 +37,12 @@ data = data%>%arrange(ID, trial)
 
 nsubj = length(unique(data$ID))
 
-engage = matrix(NA, nrow = nsubj, ncol = 3)
+nstates=3
+
+engage = matrix(NA, nrow = nsubj, ncol = 3) # here ncol=3 because there are 3 states
 nengage = matrix(NA, nrow = nsubj, ncol = 3)
 for (i in 1:nsubj){
-  engage[i,1] = count_action$sum_e[(i-1)*3+1]
+  engage[i,1] = count_action$sum_e[(i-1)*3+1] # multiplied by 3 because there are 3 states
   engage[i,2] = count_action$sum_e[(i-1)*3+2]
   engage[i,3] = count_action$sum_e[(i-1)*3+3]
   nengage[i,1] = count_action$sum_n[(i-1)*3+1]
@@ -139,20 +141,54 @@ for (indii in 1:nsubj){
   initval_MI[indii] = rho[which.max(loglike_MI)]
 }
 
-# check whether the initial value is at the boundary
+# check whether the initial value is at the boundary. For those subjects that have TRUE, we need to re-estimate as per below. In this case, we only have FALSE)
 initval_LLR == beta[1] 
 initval_LLR == beta[length(beta)]
 initval_NH == kappa[1] 
 initval_NH == kappa[length(kappa)] 
-initval_MI == rho[1] # 3 reaches the lower bound
+initval_MI == rho[1]
 initval_MI == rho[length(rho)]
 
-## Run this section only if lower or upper bound are met and need to be re-estimated or drop subjects. For warmth domain , so far we only obtain FALSE, so no need to run
-# Alternatively re-estimate for either MI, NH or LLR. Below is an example for subjects 6, 12, 13 for NH
+
+### DO NOT RUN THE BELOW SECTION RIGHT AWAY, check boundaries before (if TRUE for any subjects as given by above verification in lines 148-154)
+## Run this section ONLY IF lower or upper bound are met and need to be re-estimated. 
+# We first modify the parameter interval and then re-estimate for either MI, NH or LLR and replace re-estimated parameters in the initval_LLR, initval_NH or initval_MI variables.
+
+# do grid search again for ID = 3, 5, 10 -> these subjects reach higher bound, so we need to increase interval of estimation (doesn't work)
+# If upon increasing. estimation interval, the bounds are still not met, then just drop subjects who met the lower bound (don't run)
+# LLR
+beta.refined = seq(50,100,0.1)
+loglike_LLR.refined = rep(NA, 3) 
+initval_LLR.refined = rep(NA, 3)
+subj.refined = c(3, 5, 10)
+
+for (indii in subj.refined){
+  multinomconst = 0
+  for (i in 1:N){
+    multinomconst = multinomconst + multinom(engage[indii,i],nengage[indii,i])
+  }
+  for (j in 1:length(beta.refined)){
+    obj_llr = function(prob){
+      return(-sum(r*prob)/N+cost_llr(prob, beta.refined[j]))
+    }
+    optimout_llr=constrOptim(rep(1/20,N),obj_llr, grad = NULL, ui=conmat,ci=convec)
+    loglike_LLR.refined[j]= multinomconst + sum(engage[indii,]*log(optimout_llr$par))+sum(nengage[indii,]*(log(1-optimout_llr$par)))
+  }
+  initval_LLR.refined[indii] = beta.refined[which.max(loglike_LLR.refined)]
+}
+
+# Check if parameters are outside interval. if yes, redo with larger interval. e.g. instead of beta.refined = seq(50,100,0.1), one can use beta.refined = seq(100,200,0.1)
+initval_LLR
+initval_LLR.refined
+
+# If the values fall within the interval, then replace them in initval_LLR
+initval_LLR[c(3, 5, 10)] = initval_LLR.refined[c(3, 5, 10)]
+
+# NH
 kappa.refined = seq(50,100,0.1)
-loglike_NH.refined = rep(NA, 3)
+loglike_NH.refined = rep(NA, 3) 
 initval_NH.refined = rep(NA, 3)
-subj.refined = c(6,12,13)
+subj.refined = c(3)
 
 for (indii in subj.refined){
   multinomconst = 0
@@ -169,9 +205,45 @@ for (indii in subj.refined){
   }
   initval_NH.refined[indii] = kappa.refined[which.max(loglike_NH.refined)]
 }
-### This ends the "refined sub-section"
 
-# get lower and upper bound
+# check again if outside interval. if yes, then needs to be re-done. instead of kappa.refined = seq(50,100,0.1), one can use kappa.refined = seq(100,200,0.1)
+initval_NH
+initval_NH.refined
+
+# If the values fall within the interval, then replace them in initval_NH
+initval_NH[c(3)] = initval_NH.refined[c(3)]
+
+# MI
+rho.refined = seq(50,100,0.1)
+loglike_MI.refined = rep(NA, 3) 
+initval_MI.refined = rep(NA, 3)
+subj.refined = c(3)
+
+for (indii in subj.refined){
+  multinomconst = 0
+  for (i in 1:N){
+    multinomconst = multinomconst + multinom(engage[indii,i],nengage[indii,i])
+  }
+  for (j in 1:length(rho.refined)){
+    obj_mi = function(prob){
+      return(-sum(r*prob)/N+cost_mi(prob, rho.refined[j]))
+    }
+    optimout_mi=constrOptim(rep(1/20,N),obj_mi, grad = NULL, ui=conmat,ci=convec)
+    loglike_MI.refined[j]= multinomconst + sum(engage[indii,]*log(optimout_mi$par))+sum(nengage[indii,]*(log(1-optimout_mi$par)))
+  }
+  initval_MI.refined[indii] = rho.refined[which.max(loglike_MI.refined)]
+}
+
+# check again if outside interval. if yes, then needs to be re-done. instead of kappa.refined = seq(50,100,0.1), one can use rho.refined = seq(100,200,0.1)
+initval_MI.refined
+# If the values fall within the interval, then replace them in initval_MI
+initval_MI[c(3)] = initval_MI.refined[c(3)]
+
+
+# After MLE estimation, if errors still occur, it means that parameters are not properly re-estimated. Then just drop subjects 3, 5, 10 (easier than re-estimation)
+# In this case, all subjects are OK
+
+# get lower and upper bound for MLE estimation
 lower_LLR = initval_LLR - 0.01
 upper_LLR = initval_LLR + 0.01
 lower_NH = initval_NH - 0.1
@@ -212,8 +284,7 @@ llout_nh = rep(NA, nsubj)
 llout_mi = rep(NA, nsubj)
 
 
-
-## MLE estimation
+##### MLE estimation
 count_subj = 1:nsubj
 
 # for LLR
@@ -249,16 +320,16 @@ for (indii in 1:nsubj){
 }
 
 # for MI returns this error: Error in solve.default(oout$hessian) : Lapack routine dgesv: system is exactly singular: U[1,1] = 0
-# We have to exclude subject 18 which produces this result. Found subject through trial-and-error
+# We have to exclude subject 18 which produces this result. Found subject through trial-and-error (each subject at a time).
+# This is done in lines 263-265
 count_subj = 1:nsubj
 exclude = 18
 count_subj = count_subj[! count_subj %in% exclude]
 
-
 for (indii in count_subj){
-  #if (indii == 18) {
-  #  next
-  #}
+  if (indii == 18) {
+    next
+  }
   multinomconst = 0
   for (i in 1:N){
     multinomconst = multinomconst + multinom(engage[indii,i],nengage[indii,i])
@@ -313,7 +384,7 @@ BIC = BIC%>%mutate(
 BIC <- BIC%>%dplyr::select(BICLLR, BICNH, BICMI, select_model.bic)
 colnames(BIC) <- c("LLR", "NH", "MI", "Selected model")
 table_aic <- xtable(AIC, digits = 4, caption = "AIC for different cost functions")
-results_path = "/Users/mihai/Desktop/Caltech/SupernormalStimuli/warmth and competence/data Pavlovia"
+results_path = "/Users/mihai/Desktop/Caltech/SupernormalStimuli/Data and code final WC"
 html_output <- print(table_aic, type = "html", comment = FALSE, caption.placement = "top", printl.results = FALSE)
 footnote <- "<p> Notes on missing values: unable to find a global maximum for at least one of the cost models</p>"
 con <- file(file.path(results_path, "table_aic.html"), open = "wt")
@@ -350,6 +421,14 @@ for (indii in count_subj){
 best_model_llr = c(2)
 best_model_nh = c(4,7,8,9,11,12,13,14)
 best_model_mi = c(1,6,15)
+
+
+### In the end, we're interested in obtaining aggregate level choice probabilities for each of the states 1, 2 or 3, namely:
+#prob_llr.agg = optimout_llr$par
+#prob_nh.agg = optimout_nh$par
+#prob_mi.agg = optimout_mi$par
+#These are obtained after estimating the below. 
+
 
 
 # aggregate level
@@ -480,14 +559,8 @@ ggplot(df, aes(x = state)) +
         axis.ticks = element_blank())
 
 
-
-
-save.image("output_warmth.Rdata")
-
-
-
-
-
+save.image("output_warmth.Rdata") # saves in current WD
+# save.image("~/Desktop/Caltech/SupernormalStimuli/Data and code final/output_warmth.Rdata") # or save to a specific location
 
 
 
