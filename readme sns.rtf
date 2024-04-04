@@ -1,0 +1,130 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww20360\viewh13640\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 There are two main experiments to be run for identifying the peak-shift effect in basic supernormalized stimuli. These SNS are:\
+1. Faces with varying degree of warmth and competence, data is in \'93data sns w&c.xlsx\'94 on GitHub\
+2. Circles colored from blue to yellow, data is in \'93data sns circles.xlsx\'94 on GitHub\
+\
+Experimental design (applies to both)\
+The data has been collected through: (i) Prolific and (ii) Pavlovia platform (which synchronizes with PsychoPy where the experiment is built).\
+1. Prolific and Pavlovia.\
+1.1 Prolific: subject collection occurs through Prolific. In order to run experiments, one needs a Prolific account which needs to be funded from different sources. Contact Barbara Estrada to add funds to the online Prolific account with justification (base payment / participant + bonus / participant). 
+\f1\fs26\fsmilli13333 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Several pre-screen criteria need to be checked for, such as: age limit between 18-65, fluent English, no mental health conditions, not having participated in previous 
+\f0\fs24 SNS experiments\
+\
+The Prolific study\'a0needs to have a link that participants see and access. The link will be a Google form that represents a pre-experimental survey containing the consent form for which participants need to sign, questions on age and other socio-demographics.\
+Pre-survey link for both W&C and circles: https://forms.gle/NLgQZFy3CFhvoa8k6
+\f1 \
+
+\f0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 1.2. Pavlovia \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 At the end of this pre-experimental survey, participants will receive the Pavlovia link that redirects them to the main Pavlovia platform where they will do the actual experiment.\
+An example link to run the experiment: \cf2 \expnd0\expndtw0\kerning0
+https://run.pavlovia.org/fmtoma/sns_6circles\
+Coordinate with Mihai Toma for PsychoPy/Pavlovia experiments. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 At the end of the experiment on Pavlovia, after they finish, participants will be redirected towards a post-experimental survey:\
+Circles post-survey: https://docs.google.com/forms/d/1i-muBO-EhCqgZEYrl39-YEAqHXVXdfhbc_upy1uUdn8/edit\
+W&C post-survey: https://docs.google.com/forms/d/1GJkLNgjZcgQJc-TQJjwS3Hm0pBa03mUP8RxOs8e-PEY/edit\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+They will then receive a link that they click to confirm on Prolific that they performed the experiment. \
+\
+2. Warmth and competence\
+2.1 Short description of data\
+The experiment involves showing sequential images of faces from the Basel face dataset (https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0193190). The images represent 40 photographs of students that have been taken from the front. The students maintain the same position and facial expression. The authors then use a software to modify the facial features in the direction of WARMER / less WARM or more COMPETENT/less COMPETENT.\
+\
+There are 3 states in total for each domain (W&C):\
+Less Warm (S-), Neutral (SN) and Warmer (S+)\
+Less Competent (S-), Neutral (SN) and More Competent (S+) \
+We use the same notation S-, SN and S+ for both Warmth and Competence.\
+\
+Data is found in \'93data sns w&c.xlsx\'94 on Github.\
+\
+2.2 Experiment\
+The experiment consists of 2 sessions:\
+1 -> training session (with feedback) \'97> show each state 20x (60 trials in total) The participant has to select YES or NO and they receive feedback after each choice. If they click NO, they always get 0. If they click YES, they can get either -1 (for S-), +1 (for SN), +0.5 (for S+). The images S-, SN and S+ are displayed in this order from left to right corresponding to each face image.\
+2 -> testing session (without feedback) \'97> show each state 40x times (120 trials in total).  The participant has to select YES or NO and they DO NOT  receive feedback after each choice. If they click NO, they always get 0. If they click YES, they can get either -1 (for S-), +1 (for SN), +0.5 (for S+). The images S-, SN and S+ are displayed in this order from left to right corresponding to each face image.\
+\
+2.3 Aggregating data from Pavlovia\
+Pavlovia provides an output CSV file for each subject that contains also unnecessary information. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 A new Excel file was built manually (by Mihai) to aggregate info from each subject and set all required information for calculating: working memory accuracy, peak shift choices, rational inattention estimation.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 This file contains information on: subject ID, \
+\pard\pardeftab720\partightenfactor0
+\cf2 \expnd0\expndtw0\kerning0
+ParticipantID\'a0\'a0 No obs FirstSession\'a0\'a0\'a0\'a0 trainingTime\'a0\'a0 trainingChoice trainingChoice_binary outcome\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 account_value index_stimulus\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 binary_stim\'a0\'a0\'a0\'a0 testingTime\'a0\'a0\'a0\'a0 testingChoice\'a0 testingChoice_binary\'a0 Value
+\fs32 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+A short description of each of the above is written in the aggregated Excel file, in a different sheet \'93readme\'94. \
+\
+2.4 Peak-shift effect analysis (results in sheets Peakshift_warmth and Peakshift_competence)\
+These were manually calculated by aggregating choice and response time data for each of the S-, SN and S+ states.\
+Results along with RI estimated aggregate choice probabilities can be found in sheets \'93Results testing warmth\'94 and \'93Results testing competence\'94\
+\
+\
+2.5 Rational inattention code estimation\
+The RI code estimation was done in R Studio and it needs to be done line by line, given the complexity of the estimation procedure. There are multiple comments in the code that indicate what to do at each step. Reading the code is intuitive from a \'93programming\'94 perspective, but it can be considered difficult/plastic for someone who has not read about rational inattention. \
+The goal is to produce aggregate choice probabilities for each of the states S-, SN or S+.\
+\
+For example, there are hurdles that can arise when lower bound limits are reached by the estimation procedure for particular subjects. In that case, there are two options:\
+(i) either manually change the parameter bounds OR \
+(i) just drop subjects for which the bounds are met\
+\
+More information can be found in the code, written before or at the lines that require attention in this sense. \
+\
+3. Circles\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 3.1 Short description of data\
+The experiment involves showing sequential images of circles that vary in colors from blue to yellow. The circles were generated in Python. \
+\
+There are 6 states (circles) in total. The reward for each circle is displayed below (in this order from left to right.\
+SN, S--, S-, S+, S++, SN\
+0, -0.5,  -1, +1, +0.5, 0\
+\
+Data is found in \'93data sns circles.xlsx\'94 on GitHub.\
+\
+3.2 Experiment\
+The experiment consists of 2 sessions:\
+1 -> training session (with feedback) \'97> show each state 20x times (60 trials in total) The participant has to select YES or NO and they receive feedback after each choice. If they click NO, they always get 0. If they click YES, they can get either 0 (for SN), -1 (for S-), -0.5 (for S--), +1 (for SN), +0.5 (for S++). \
+2 -> testing session (without feedback) \'97> show each state 40x times (120 trials in total).  The participant has to select YES or NO and they DO NOT receive feedback after each choice. If they click NO, they always get 0. If they click YES, they can get either 0 (for SN), -1 (for S-), -0.5 (for S--), +1 (for SN), +0.5 (for S++). \
+\
+3.3 Aggregating data from Pavlovia\
+Pavlovia provides an output CSV file for each subject that contains also unnecessary information. \
+A new Excel file was built manually (by Mihai) to aggregate info from each subject and set all required information for calculating: working memory accuracy, peak shift choices, rational inattention estimation.\
+\
+This file contains information on: subject ID, \
+\pard\pardeftab720\partightenfactor0
+\cf2 \expnd0\expndtw0\kerning0
+ParticipantID\'a0\'a0 No obs FirstSession\'a0\'a0\'a0\'a0 trainingTime\'a0\'a0 trainingChoice trainingChoice_binary outcome\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 account_value index_stimulus\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 binary_stim\'a0\'a0\'a0\'a0 testingTime\'a0\'a0\'a0\'a0 testingChoice\'a0 testingChoice_binary\'a0 Value
+\fs32 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+A short description of each of the above is written in the aggregated Excel file, in a different sheet \'93readme\'94. \
+\
+3.4 Peak-shift effect analysis \
+These were manually calculated by aggregating choice and response time data for each of the states: SN, S--, S-, S+, S++, SN\
+Results along with RI estimated aggregate choice probabilities can be found in sheets \'93peak shift\'94 and \'93RI result\'94\
+\
+3.5 Rational inattention code estimation\
+The RI code estimation was done in R Studio and it needs to be done line by line, given the complexity of the estimation procedure. There are multiple comments in the code that indicate what to do at each step. Reading the code is intuitive from a \'93programming\'94 perspective, but it can be considered difficult/plastic for someone who has not read about rational inattention. \
+The goal is to produce aggregate choice probabilities for each of the states S-, SN or S+.\
+\
+Difficulties can arise when lower bound limits are reached by the estimation procedure for particular subjects. In that case, there are two options:\
+(i) either manually change the parameter bounds OR \
+(i) just drop subjects for which the bounds are met\
+\
+More information can be found in the code, written before or at the lines that require attention in this sense. }
